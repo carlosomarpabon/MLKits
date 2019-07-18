@@ -5,18 +5,22 @@ class LinearRegression {
     constructor(features, labels, options) {
         this.features = this.processFeatures(features);
         this.labels = tf.tensor(labels);
+        this.mseHistory = [];
 
         this.options = Object.assign(
             { learningRate: 0.1, iterations: 1000 },
             options
         );
 
-        this.weights = tf.zeros([2, 1]);
+        this.weights = tf.zeros([this.features.shape[1], 1]);
     }
 
     train() {
         for (let i = 0; i < this.options.iterations; i++) {
+            //console.log(this.options.learningRate);
             this.gradientDescent();
+            this.recordMSE();
+            this.updateLearningRate();
         }
     }
 
@@ -71,22 +75,30 @@ class LinearRegression {
 
         return features.sub(mean).div(variance.pow(0.5));
     }
-    //gradientDescent() {
-    //    const currentGuessesForMPG = this.features.map(row => {
-    //        return this.m * row[0] + this.b;
-    //    });
 
-    //    const bSlope = _.sum(currentGuessesForMPG.map((guess, i) => {
-    //        return guess - this.labels[i][0];
-    //    })) * 2 / this.features.length;
+    recordMSE() {
+        const mse = this.features
+            .matMul(this.weights)
+            .sub(this.labels)
+            .pow(2)
+            .sum()
+            .div(this.features.shape[0])
+            .get();
 
-    //    const mSlope = _.sum(currentGuessesForMPG.map((guess, i) => {
-    //        return -1 * this.features[i][0] * (this.labels[i][0] - guess);
-    //    })) * 2 / this.features.length;
+        this.mseHistory.unshift(mse);
+    }
 
-    //    this.m = this.m - mSlope * this.options.learningRate;
-    //    this.b = this.b - bSlope * this.options.learningRate;
-    //}
+    updateLearningRate() {
+        if (this.mseHistory.length < 2) {
+            return;
+        }
+
+        if (this.mseHistory[0] > this.mseHistory[1]) {
+            this.options.learningRate /= 2;
+        } else {
+            this.options.learningRate *= 1.05;
+        }
+    }
 }
 
 module.exports = LinearRegression;
