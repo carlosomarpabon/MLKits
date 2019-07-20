@@ -61,11 +61,13 @@ class LinearRegression {
 
     const predictions = testFeatures.matMul(this.weights);
 
+    //Sums Squared Residual
     const res = testLabels
       .sub(predictions)
       .pow(2)
       .sum()
-      .get();
+        .get();
+      //Sums Squared Total
     const tot = testLabels
       .sub(testLabels.mean())
       .pow(2)
