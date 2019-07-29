@@ -72,13 +72,13 @@ class LogisticRegression {
 
     processFeatures(features) {
         features = tf.tensor(features);
-        features = tf.ones([features.shape[0], 1]).concat(features, 1);
-
+        
         if (this.mean && this.variance) {
             features = features.sub(this.mean).div(this.variance.pow(0.5));
         } else {
             features = this.standardize(features);
         }
+        features = tf.ones([features.shape[0], 1]).concat(features, 1);
 
         return features;
     }
@@ -86,10 +86,13 @@ class LogisticRegression {
     standardize(features) {
         const { mean, variance } = tf.moments(features, 0);
 
+        //Workaround for columns with val of 0 (dividing by zero NaN is returned)
+        //Turns all values to 0 and 1, reverses them so that when you add them to original value zeros are ones and rest of values are unchanged (n + 0 = n)
+        const filler = variance.cast('bool').logicalNot().cast('float32'); 
         this.mean = mean;
-        this.variance = variance;
+        this.variance = variance.add(filler);
 
-        return features.sub(mean).div(variance.pow(0.5));
+        return features.sub(mean).div(this.variance.pow(0.5));
     }
 
     recordCost() {
